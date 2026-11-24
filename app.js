@@ -5,6 +5,8 @@ const ACTIVE_VEHICLE_KEY = "carlog-active-vehicle-v1";
 const STARTER_FLEET_KEY = "carlog-starter-fleet-v1";
 const READ_NOTIFICATIONS_KEY = "carlog-read-notifications-v1";
 const TRIP_CHECKLIST_KEY = "carlog-trip-checklist-v1";
+const PROFILE_NAME_KEY = "carlog-profile-name-v1";
+const MAX_PROFILE_NAME_LENGTH = 60;
 const BACKUP_FORMAT = "carlog-backup";
 const BACKUP_VERSION = 1;
 const BACKUP_KEYS = [STORAGE_KEY, CURRENT_KM_KEY, VEHICLES_KEY, ACTIVE_VEHICLE_KEY, STARTER_FLEET_KEY, READ_NOTIFICATIONS_KEY, TRIP_CHECKLIST_KEY];
@@ -52,12 +54,45 @@ let vehicles = readStoredVehicles();
 let activeVehicleId = localStorage.getItem(ACTIVE_VEHICLE_KEY) || vehicles[0].id;
 if (!vehicles.some((vehicle) => vehicle.id === activeVehicleId)) activeVehicleId = vehicles[0].id;
 let records = readStoredRecords();
+let profileName = readStoredProfileName();
 let currentView = "dashboard";
 let editingVehicleId = null;
 let editingRecordId = null;
 
 function getActiveVehicle() {
   return vehicles.find((vehicle) => vehicle.id === activeVehicleId) || vehicles[0];
+}
+
+function readStoredProfileName() {
+  try {
+    const savedName = localStorage.getItem(PROFILE_NAME_KEY);
+    return typeof savedName === "string" ? savedName.trim().slice(0, MAX_PROFILE_NAME_LENGTH) : "";
+  } catch (error) {
+    console.error("Não foi possível carregar o nome do perfil.", error);
+    return "";
+  }
+}
+
+function getProfileInitials(name) {
+  const words = name.trim().split(/\s+/).filter(Boolean);
+  if (!words.length) return "?";
+  const initials = words.length === 1
+    ? Array.from(words[0]).slice(0, 2).join("")
+    : `${Array.from(words[0])[0]}${Array.from(words[words.length - 1])[0]}`;
+  return initials.toLocaleUpperCase("pt-PT");
+}
+
+function renderProfile() {
+  const displayName = profileName || "Definir nome";
+  const initials = getProfileInitials(profileName);
+  const accessibleName = profileName ? `Editar perfil de ${profileName}` : "Definir o teu nome";
+  document.querySelector("#profile-name").textContent = displayName;
+  document.querySelector("#profile-avatar").textContent = initials;
+  document.querySelector("#top-profile-avatar").textContent = initials;
+  document.querySelectorAll('[data-action="edit-profile"]').forEach((button) => {
+    button.setAttribute("aria-label", accessibleName);
+    button.title = accessibleName;
+  });
 }
 
 function recordsForActiveVehicle() {
@@ -788,6 +823,17 @@ const dialog = document.querySelector("#record-dialog");
 const form = document.querySelector("#record-form");
 const vehicleDialog = document.querySelector("#vehicle-dialog");
 const vehicleForm = document.querySelector("#vehicle-form");
+const profileDialog = document.querySelector("#profile-dialog");
+const profileForm = document.querySelector("#profile-form");
+const profileNameInput = document.querySelector("#profile-name-input");
+const profileFormError = document.querySelector("#profile-form-error");
+
+function openProfileDialog() {
+  profileNameInput.value = profileName;
+  profileFormError.textContent = "";
+  profileDialog.showModal();
+  profileNameInput.focus();
+}
 
 function showFormError(message) {
   document.querySelector("#form-error").textContent = message;
@@ -937,6 +983,28 @@ const notificationToggle = document.querySelector("#notification-toggle");
 const dataDialog = document.querySelector("#data-dialog");
 const backupFileInput = document.querySelector("#import-backup-file");
 
+document.querySelectorAll('[data-action="edit-profile"]').forEach((button) => button.addEventListener("click", openProfileDialog));
+document.querySelector("#profile-dialog-close").addEventListener("click", () => profileDialog.close());
+document.querySelector("#profile-dialog-cancel").addEventListener("click", () => profileDialog.close());
+profileForm.addEventListener("submit", (event) => {
+  event.preventDefault();
+  const nextName = profileNameInput.value.trim();
+  if (!nextName) {
+    profileFormError.textContent = "Escreve o teu nome para guardar.";
+    profileNameInput.focus();
+    return;
+  }
+  try {
+    localStorage.setItem(PROFILE_NAME_KEY, nextName);
+  } catch (error) {
+    console.error("Não foi possível guardar o nome do perfil.", error);
+    profileFormError.textContent = "Não foi possível guardar o nome neste navegador.";
+    return;
+  }
+  profileName = nextName;
+  renderProfile();
+  profileDialog.close();
+});
 document.querySelector("#backup-toggle").addEventListener("click", () => dataDialog.showModal());
 document.querySelector("#data-dialog-close").addEventListener("click", () => dataDialog.close());
 document.querySelector("#export-backup").addEventListener("click", () => {
@@ -1229,4 +1297,5 @@ function refresh() {
 const today = new Date();
 document.querySelector("#today-label").textContent = new Intl.DateTimeFormat("pt-PT", { weekday: "short", day: "numeric", month: "short" }).format(today);
 document.querySelector(".welcome-row .eyebrow").textContent = new Intl.DateTimeFormat("pt-PT", { weekday: "long", day: "numeric", month: "long" }).format(today).toUpperCase();
+renderProfile();
 renderDashboard();

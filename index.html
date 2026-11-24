@@ -55,9 +55,9 @@
             <span class="online-dot"></span>
           </button>
           <div class="profile">
-            <span class="avatar">CL</span>
-            <span><strong>Condutor</strong><small>Conta pessoal</small></span>
-            <button class="more-button" aria-label="Mais opções">•••</button>
+            <button class="avatar profile-avatar" id="profile-avatar" type="button" data-action="edit-profile" aria-label="Definir o teu nome">?</button>
+            <span><strong id="profile-name">Definir nome</strong><small>Conta pessoal</small></span>
+            <button class="more-button" type="button" data-action="edit-profile" aria-label="Editar perfil" title="Editar perfil">•••</button>
           </div>
         </div>
       </aside>
@@ -81,7 +81,7 @@
                 <div id="notification-list" class="notification-list"></div>
               </section>
             </div>
-            <button class="top-avatar" aria-label="Perfil">CL</button>
+            <button class="top-avatar" id="top-profile-avatar" type="button" data-action="edit-profile" aria-label="Definir o teu nome">?</button>
           </div>
         </header>
 
@@ -347,6 +347,18 @@
         </div>
         <p class="data-dialog-warning">A importação substitui os dados atuais desta aplicação neste navegador. Só uses ficheiros de cópia CarLog em que confies.</p>
       </div>
+    </dialog>
+    <dialog id="profile-dialog" class="record-dialog profile-dialog" aria-labelledby="profile-dialog-title">
+      <form id="profile-form">
+        <div class="dialog-heading">
+          <div><p class="eyebrow">PERFIL PESSOAL</p><h2 id="profile-dialog-title">O teu nome</h2></div>
+          <button type="button" class="dialog-close" id="profile-dialog-close" aria-label="Fechar">×</button>
+        </div>
+        <p class="data-dialog-note">Escreve o nome que queres ver na aplicação. Fica guardado apenas neste navegador.</p>
+        <label class="form-field" for="profile-name-input">Nome<input id="profile-name-input" name="name" type="text" maxlength="60" autocomplete="name" placeholder="Ex.: Ana Silva" required /></label>
+        <p class="form-error" id="profile-form-error" role="alert"></p>
+        <div class="dialog-actions"><button type="button" class="button button-cancel" id="profile-dialog-cancel">Cancelar</button><button type="submit" class="button button-primary">Guardar nome</button></div>
+      </form>
     </dialog>
     <script src="app.js"></script>
   </body>
